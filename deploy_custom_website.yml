@@ -1,0 +1,67 @@
+---
+- name: Deploy custom website
+  hosts: debian_hosts, Redhat_hosts
+  become: true
+  vars:
+   website_path: "/var/www/html"
+   apache_listen_port: 8080
+  tasks:
+    # Install Apache on Debian-based systems
+    - name: Install Apache package
+      apt:
+        name: apache2
+        state: present
+      when: ansible_os_family == "Debian" 
+
+    # Install Apache on RedHat-based systems
+    - name: Install Apache
+      yum:
+        name: httpd
+        state: present
+      when: ansible_os_family == "RedHat" 
+
+    # Change DocumentRoot on Debian-based systems
+    - name: Change Default Document Root
+      lineinfile:
+        dest: /etc/apache2/sites-available/000-default.conf
+        regexp: "^\\s*DocumentRoot"
+        line: " DocumentRoot {{ website_path }}"
+      when: ansible_os_family == "Debian"
+
+     # Change DocumentRoot on RedHat-based systems
+    - name: Change Default Document Root
+      lineinfile:
+        dest: /etc/httpd/conf/httpd.conf
+        regexp: "^\\s*DocumentRoot"
+        line: "DocumentRoot {{ website_path }}"
+      when: ansible_os_family == "RedHat"
+
+     # Change Listen port on Debian-based systems
+    - name: Change Ports
+      lineinfile:
+        dest: /etc/apache2/ports.conf
+        regexp: "^Listen"
+        line: "Listen {{ apache_listen_port }}"
+      when: ansible_os_family == "Debian"
+
+     # Change Listen port on RedHat-based systems
+    - name: Change Ports
+      lineinfile:
+        dest: /etc/httpd/conf/httpd.conf
+        regexp: "^Listen"
+        line: "Listen {{ apache_listen_port }}"
+      when: ansible_os_family == "RedHat"
+
+    # Restart Apache on Debian-based systems
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+      when: ansible_os_family == "Debian" 
+
+    # Restart Apache on RedHat-based systems
+    - name: Restart Apache
+      service:
+        name: httpd
+        state: restarted
+      when: ansible_os_family == "RedHat"   
